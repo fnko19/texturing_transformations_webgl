@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebGL 3D Transformations Demo</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        max-width: 900px;
+        width: 100%;
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 20px;
+        font-size: 14px;
+      }
+      canvas {
+        border: 3px solid #f5576c;
+        border-radius: 10px;
+        display: block;
+        margin: 20px auto;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+      }
+      .control-group {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #f5576c;
+      }
+      .control-group h3 {
+        margin-top: 0;
+        color: #f5576c;
+        font-size: 16px;
+      }
+      .slider-container {
+        margin: 10px 0;
+      }
+      .slider-container label {
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+        font-size: 14px;
+      }
+      input[type="range"] {
+        width: 100%;
+        margin: 5px 0;
+      }
+      .value-display {
+        display: inline-block;
+        min-width: 50px;
+        text-align: right;
+        font-weight: bold;
+        color: #f5576c;
+      }
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+      button {
+        flex: 1;
+        padding: 10px;
+        background: #f5576c;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.3s;
+      }
+      button:hover {
+        background: #d84560;
+      }
+      .projection-toggle {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .projection-toggle label {
+        flex: 1;
+        padding: 10px;
+        background: #e9ecef;
+        text-align: center;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .projection-toggle input[type="radio"] {
+        display: none;
+      }
+      .projection-toggle input[type="radio"]:checked + label {
+        background: #f5576c;
+        color: white;
+      }
+      .info {
+        background: #e8f5e9;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+        border-left: 4px solid #4caf50;
+      }
+      .info h3 {
+        margin-top: 0;
+        color: #2e7d32;
+      }
+      .info ul {
+        margin: 10px 0;
+        padding-left: 20px;
+      }
+      .info li {
+        margin: 5px 0;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎯 WebGL 3D Transformations Demo</h1>
+      <div class="subtitle">
+        Demonstrasi Translation, Rotation, dan Scaling dengan Matrix
+        Transformations
+      </div>
+
+      <canvas id="glCanvas" width="640" height="640"></canvas>
+
+      <div class="controls">
+        <div class="control-group">
+          <h3>🔄 Rotation (Radians)</h3>
+          <div class="slider-container">
+            <label
+              >X-Axis:
+              <span id="rotXValue" class="value-display">0.0</span></label
+            >
+            <input
+              type="range"
+              id="rotX"
+              min="-3.14"
+              max="3.14"
+              step="0.01"
+              value="0"
+            />
+          </div>
+          <div class="slider-container">
+            <label
+              >Y-Axis:
+              <span id="rotYValue" class="value-display">0.0</span></label
+            >
+            <input
+              type="range"
+              id="rotY"
+              min="-3.14"
+              max="3.14"
+              step="0.01"
+              value="0"
+            />
+          </div>
+          <div class="slider-container">
+            <label
+              >Z-Axis:
+              <span id="rotZValue" class="value-display">0.0</span></label
+            >
+            <input
+              type="range"
+              id="rotZ"
+              min="-3.14"
+              max="3.14"
+              step="0.01"
+              value="0"
+            />
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h3>📍 Translation</h3>
+          <div class="slider-container">
+            <label
+              >X: <span id="transXValue" class="value-display">0.0</span></label
+            >
+            <input
+              type="range"
+              id="transX"
+              min="-3"
+              max="3"
+              step="0.1"
+              value="0"
+            />
+          </div>
+          <div class="slider-container">
+            <label
+              >Y: <span id="transYValue" class="value-display">0.0</span></label
+            >
+            <input
+              type="range"
+              id="transY"
+              min="-3"
+              max="3"
+              step="0.1"
+              value="0"
+            />
+          </div>
+          <div class="slider-container">
+            <label
+              >Z:
+              <span id="transZValue" class="value-display">-6.0</span></label
+            >
+            <input
+              type="range"
+              id="transZ"
+              min="-10"
+              max="-2"
+              step="0.1"
+              value="-6"
+            />
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h3>📏 Scale</h3>
+          <div class="slider-container">
+            <label
+              >X: <span id="scaleXValue" class="value-display">1.0</span></label
+            >
+            <input
+              type="range"
+              id="scaleX"
+              min="0.1"
+              max="3"
+              step="0.1"
+              value="1"
+            />
+          </div>
+          <div class="slider-container">
+            <label
+              >Y: <span id="scaleYValue" class="value-display">1.0</span></label
+            >
+            <input
+              type="range"
+              id="scaleY"
+              min="0.1"
+              max="3"
+              step="0.1"
+              value="1"
+            />
+          </div>
+          <div class="slider-container">
+            <label
+              >Z: <span id="scaleZValue" class="value-display">1.0</span></label
+            >
+            <input
+              type="range"
+              id="scaleZ"
+              min="0.1"
+              max="3"
+              step="0.1"
+              value="1"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <h3>🎥 Projection Type</h3>
+        <div class="projection-toggle">
+          <input
+            type="radio"
+            name="projection"
+            id="perspective"
+            value="perspective"
+            checked
+          />
+          <label for="perspective">Perspective</label>
+
+          <input
+            type="radio"
+            name="projection"
+            id="orthographic"
+            value="orthographic"
+          />
+          <label for="orthographic">Orthographic</label>
+        </div>
+        <div class="button-group">
+          <button onclick="resetTransform()">Reset All</button>
+          <button onclick="autoRotate()">Auto Rotate</button>
+        </div>
+      </div>
+
+      <div class="info">
+        <h3>Konsep yang Didemonstrasikan:</h3>
+        <ul>
+          <li>
+            <strong>Modelview Matrix:</strong> Kombinasi dari model dan view
+            transformations
+          </li>
+          <li>
+            <strong>Projection Matrix:</strong> Perspective dan Orthographic
+            projection
+          </li>
+          <li>
+            <strong>Translation:</strong> Menggeser objek dalam ruang 3D (X, Y,
+            Z)
+          </li>
+          <li>
+            <strong>Rotation:</strong> Memutar objek di sekitar axis X, Y, Z
+          </li>
+          <li>
+            <strong>Scaling:</strong> Mengubah ukuran objek di setiap dimensi
+          </li>
+          <li>
+            <strong>Matrix Composition:</strong> Urutan transformasi: Scale →
+            Rotate → Translate
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      const vsSource = `
+            attribute vec3 aVertexPosition;
+            attribute vec3 aVertexColor;
+            
+            uniform mat4 uModelViewMatrix;
+            uniform mat4 uProjectionMatrix;
+            
+            varying lowp vec4 vColor;
+            
+            void main() {
+                gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aVertexPosition, 1.0);
+                vColor = vec4(aVertexColor, 1.0);
+            }
+        `;
+
+      const fsSource = `
+            precision mediump float;
+            varying lowp vec4 vColor;
+            
+            void main() {
+                gl_FragColor = vColor;
+            }
+        `;
+
+      let gl, programInfo, buffers;
+      let autoRotating = false;
+
+      function main() {
+        const canvas = document.getElementById("glCanvas");
+        gl = canvas.getContext("webgl");
+
+        if (!gl) {
+          alert("WebGL tidak tersedia!");
+          return;
+        }
+
+        const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
+        const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+
+        const shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
+
+        programInfo = {
+          program: shaderProgram,
+          attribLocations: {
+            vertexPosition: gl.getAttribLocation(
+              shaderProgram,
+              "aVertexPosition"
+            ),
+            vertexColor: gl.getAttribLocation(shaderProgram, "aVertexColor"),
+          },
+          uniformLocations: {
+            projectionMatrix: gl.getUniformLocation(
+              shaderProgram,
+              "uProjectionMatrix"
+            ),
+            modelViewMatrix: gl.getUniformLocation(
+              shaderProgram,
+              "uModelViewMatrix"
+            ),
+          },
+        };
+
+        buffers = initBuffers(gl);
+        setupControls();
+        render();
+      }
+
+      function initBuffers(gl) {
+        const positions = [
+          // Front (Red)
+          -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
+          // Back (Green)
+          -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0,
+          // Top (Blue)
+          -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0,
+          // Bottom (Yellow)
+          -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0,
+          // Right (Cyan)
+          1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0,
+          // Left (Magenta)
+          -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0,
+        ];
+
+        const colors = [
+          [1.0, 0.0, 0.0],
+          [0.0, 1.0, 0.0],
+          [0.0, 0.0, 1.0],
+          [1.0, 1.0, 0.0],
+          [0.0, 1.0, 1.0],
+          [1.0, 0.0, 1.0],
+        ];
+
+        let colorData = [];
+        for (let i = 0; i < 6; i++) {
+          for (let j = 0; j < 4; j++) {
+            colorData.push(...colors[i]);
+          }
+        }
+
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array(positions),
+          gl.STATIC_DRAW
+        );
+
+        const colorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array(colorData),
+          gl.STATIC_DRAW
+        );
+
+        const indices = [
+          0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14,
+          12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23,
+        ];
+
+        const indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.bufferData(
+          gl.ELEMENT_ARRAY_BUFFER,
+          new Uint16Array(indices),
+          gl.STATIC_DRAW
+        );
+
+        return {
+          position: positionBuffer,
+          color: colorBuffer,
+          indices: indexBuffer,
+        };
+      }
+
+      function setupControls() {
+        [
+          "rotX",
+          "rotY",
+          "rotZ",
+          "transX",
+          "transY",
+          "transZ",
+          "scaleX",
+          "scaleY",
+          "scaleZ",
+        ].forEach((id) => {
+          document.getElementById(id).addEventListener("input", render);
+        });
+        document
+          .querySelectorAll('input[name="projection"]')
+          .forEach((radio) => {
+            radio.addEventListener("change", render);
+          });
+      }
+
+      function render() {
+        const rotX = parseFloat(document.getElementById("rotX").value);
+        const rotY = parseFloat(document.getElementById("rotY").value);
+        const rotZ = parseFloat(document.getElementById("rotZ").value);
+        const transX = parseFloat(document.getElementById("transX").value);
+        const transY = parseFloat(document.getElementById("transY").value);
+        const transZ = parseFloat(document.getElementById("transZ").value);
+        const scaleX = parseFloat(document.getElementById("scaleX").value);
+        const scaleY = parseFloat(document.getElementById("scaleY").value);
+        const scaleZ = parseFloat(document.getElementById("scaleZ").value);
+
+        document.getElementById("rotXValue").textContent = rotX.toFixed(2);
+        document.getElementById("rotYValue").textContent = rotY.toFixed(2);
+        document.getElementById("rotZValue").textContent = rotZ.toFixed(2);
+        document.getElementById("transXValue").textContent = transX.toFixed(1);
+        document.getElementById("transYValue").textContent = transY.toFixed(1);
+        document.getElementById("transZValue").textContent = transZ.toFixed(1);
+        document.getElementById("scaleXValue").textContent = scaleX.toFixed(1);
+        document.getElementById("scaleYValue").textContent = scaleY.toFixed(1);
+        document.getElementById("scaleZValue").textContent = scaleZ.toFixed(1);
+
+        drawScene(
+          rotX,
+          rotY,
+          rotZ,
+          transX,
+          transY,
+          transZ,
+          scaleX,
+          scaleY,
+          scaleZ
+        );
+      }
+
+      function drawScene(rotX, rotY, rotZ, tx, ty, tz, sx, sy, sz) {
+        gl.clearColor(0.95, 0.95, 0.97, 1.0);
+        gl.clearDepth(1.0);
+        gl.enable(gl.DEPTH_TEST);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        const projectionType = document.querySelector(
+          'input[name="projection"]:checked'
+        ).value;
+        const projectionMatrix =
+          projectionType === "perspective"
+            ? mat4_perspective((45 * Math.PI) / 180, 1.0, 0.1, 100.0)
+            : mat4_ortho(-4, 4, -4, 4, 0.1, 100.0);
+
+        const modelViewMatrix = mat4_create();
+        mat4_translate(modelViewMatrix, [tx, ty, tz]);
+        mat4_rotateX(modelViewMatrix, rotX);
+        mat4_rotateY(modelViewMatrix, rotY);
+        mat4_rotateZ(modelViewMatrix, rotZ);
+        mat4_scale(modelViewMatrix, [sx, sy, sz]);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+        gl.vertexAttribPointer(
+          programInfo.attribLocations.vertexPosition,
+          3,
+          gl.FLOAT,
+          false,
+          0,
+          0
+        );
+        gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
+        gl.vertexAttribPointer(
+          programInfo.attribLocations.vertexColor,
+          3,
+          gl.FLOAT,
+          false,
+          0,
+          0
+        );
+        gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
+        gl.useProgram(programInfo.program);
+        gl.uniformMatrix4fv(
+          programInfo.uniformLocations.projectionMatrix,
+          false,
+          projectionMatrix
+        );
+        gl.uniformMatrix4fv(
+          programInfo.uniformLocations.modelViewMatrix,
+          false,
+          modelViewMatrix
+        );
+        gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+      }
+
+      function resetTransform() {
+        document.getElementById("rotX").value = 0;
+        document.getElementById("rotY").value = 0;
+        document.getElementById("rotZ").value = 0;
+        document.getElementById("transX").value = 0;
+        document.getElementById("transY").value = 0;
+        document.getElementById("transZ").value = -6;
+        document.getElementById("scaleX").value = 1;
+        document.getElementById("scaleY").value = 1;
+        document.getElementById("scaleZ").value = 1;
+        autoRotating = false;
+        render();
+      }
+
+      function autoRotate() {
+        autoRotating = !autoRotating;
+        if (autoRotating) {
+          function animate() {
+            if (!autoRotating) return;
+            const rotY = parseFloat(document.getElementById("rotY").value);
+            document.getElementById("rotY").value = (rotY + 0.02) % 6.28;
+            render();
+            requestAnimationFrame(animate);
+          }
+          animate();
+        }
+      }
+
+      function loadShader(gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        return shader;
+      }
+
+      function mat4_create() {
+        return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+      }
+
+      function mat4_perspective(fovy, aspect, near, far) {
+        const f = 1.0 / Math.tan(fovy / 2),
+          nf = 1 / (near - far);
+        return [
+          f / aspect,
+          0,
+          0,
+          0,
+          0,
+          f,
+          0,
+          0,
+          0,
+          0,
+          (far + near) * nf,
+          -1,
+          0,
+          0,
+          2 * far * near * nf,
+          0,
+        ];
+      }
+
+      function mat4_ortho(left, right, bottom, top, near, far) {
+        const lr = 1 / (left - right),
+          bt = 1 / (bottom - top),
+          nf = 1 / (near - far);
+        return [
+          -2 * lr,
+          0,
+          0,
+          0,
+          0,
+          -2 * bt,
+          0,
+          0,
+          0,
+          0,
+          2 * nf,
+          0,
+          (left + right) * lr,
+          (top + bottom) * bt,
+          (far + near) * nf,
+          1,
+        ];
+      }
+
+      function mat4_translate(m, v) {
+        m[12] += v[0];
+        m[13] += v[1];
+        m[14] += v[2];
+      }
+
+      function mat4_scale(m, v) {
+        m[0] *= v[0];
+        m[1] *= v[0];
+        m[2] *= v[0];
+        m[3] *= v[0];
+        m[4] *= v[1];
+        m[5] *= v[1];
+        m[6] *= v[1];
+        m[7] *= v[1];
+        m[8] *= v[2];
+        m[9] *= v[2];
+        m[10] *= v[2];
+        m[11] *= v[2];
+      }
+
+      function mat4_rotateX(m, a) {
+        const c = Math.cos(a),
+          s = Math.sin(a);
+        const m4 = m[4],
+          m5 = m[5],
+          m6 = m[6],
+          m7 = m[7],
+          m8 = m[8],
+          m9 = m[9],
+          m10 = m[10],
+          m11 = m[11];
+        m[4] = m4 * c + m8 * s;
+        m[5] = m5 * c + m9 * s;
+        m[6] = m6 * c + m10 * s;
+        m[7] = m7 * c + m11 * s;
+        m[8] = m8 * c - m4 * s;
+        m[9] = m9 * c - m5 * s;
+        m[10] = m10 * c - m6 * s;
+        m[11] = m11 * c - m7 * s;
+      }
+
+      function mat4_rotateY(m, a) {
+        const c = Math.cos(a),
+          s = Math.sin(a);
+        const m0 = m[0],
+          m1 = m[1],
+          m2 = m[2],
+          m3 = m[3],
+          m8 = m[8],
+          m9 = m[9],
+          m10 = m[10],
+          m11 = m[11];
+        m[0] = m0 * c - m8 * s;
+        m[1] = m1 * c - m9 * s;
+        m[2] = m2 * c - m10 * s;
+        m[3] = m3 * c - m11 * s;
+        m[8] = m0 * s + m8 * c;
+        m[9] = m1 * s + m9 * c;
+        m[10] = m2 * s + m10 * c;
+        m[11] = m3 * s + m11 * c;
+      }
+
+      function mat4_rotateZ(m, a) {
+        const c = Math.cos(a),
+          s = Math.sin(a);
+        const m0 = m[0],
+          m1 = m[1],
+          m2 = m[2],
+          m3 = m[3],
+          m4 = m[4],
+          m5 = m[5],
+          m6 = m[6],
+          m7 = m[7];
+        m[0] = m0 * c + m4 * s;
+        m[1] = m1 * c + m5 * s;
+        m[2] = m2 * c + m6 * s;
+        m[3] = m3 * c + m7 * s;
+        m[4] = m4 * c - m0 * s;
+        m[5] = m5 * c - m1 * s;
+        m[6] = m6 * c - m2 * s;
+        m[7] = m7 * c - m3 * s;
+      }
+
+      window.onload = main;
+    </script>
+  </body>
+</html>
